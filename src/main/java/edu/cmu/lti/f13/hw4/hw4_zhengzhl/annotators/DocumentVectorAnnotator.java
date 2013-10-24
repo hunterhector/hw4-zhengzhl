@@ -75,7 +75,7 @@ public class DocumentVectorAnnotator extends JCasAnnotator_ImplBase {
 			// int endIndex = coreToken.get(CharacterOffsetEndAnnotation.class);
 			// Token token = new Token(aJCas, docBegin + beginIndex, endIndex);
 
-			String word = coreToken.word();
+			String word = coreToken.word().toLowerCase();
 			if (tokenCounts.containsKey(word)) {
 				tokenCounts.put(word, tokenCounts.get(word) + 1);
 			} else {

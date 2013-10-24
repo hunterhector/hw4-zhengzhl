@@ -22,7 +22,7 @@ import org.apache.uima.util.ProcessTrace;
 
 import edu.cmu.lti.f13.hw4.hw4_zhengzhl.typesystems.Document;
 import edu.cmu.lti.f13.hw4.hw4_zhengzhl.typesystems.Token;
-import edu.cmu.lti.f13.hw4.hw4_zhengzhl.utils.Pair;
+import edu.cmu.lti.f13.hw4.hw4_zhengzhl.utils.Answer;
 
 public class RetrievalEvaluator extends CasConsumer_ImplBase {
 
@@ -76,13 +76,13 @@ public class RetrievalEvaluator extends CasConsumer_ImplBase {
 			relList.add(doc.getRelevanceValue());
 
 			// Do something useful here
+
 			Map<String, Integer> tokenWithFreq = new HashMap<String, Integer>();
 			for (Token token : FSCollectionFactory.create(fsTokenList,
 					Token.class)) {
 				globalWords.add(token.getText());
 				tokenWithFreq.put(token.getText(), token.getFrequency());
 			}
-
 			documents.add(tokenWithFreq);
 		}
 
@@ -98,31 +98,46 @@ public class RetrievalEvaluator extends CasConsumer_ImplBase {
 
 		super.collectionProcessComplete(arg0);
 
-		List<List<Pair<Integer, Double>>> allScorePairs = new ArrayList<List<Pair<Integer, Double>>>();
+		List<List<Answer>> allScoredAnswer = new ArrayList<List<Answer>>();
 
 		Map<String, Integer> currentQuery = null;
 		// TODO :: compute the cosine similarity measure
+		int sentid = 1;
 		for (int i = 0; i < qIdList.size(); i++) {
 			int qid = qIdList.get(i);
 			int rel = relList.get(i);
 			Map<String, Integer> document = documents.get(i);
 			if (rel == 99) {
 				currentQuery = document;
-				allScorePairs.add(new ArrayList<Pair<Integer, Double>>());
+				allScoredAnswer.add(new ArrayList<Answer>());
+				sentid = 1;
 			} else {
 				double cosine = computeCosineSimilarity(currentQuery, document);
-				allScorePairs.get(allScorePairs.size() - 1).add(
-						Pair.of(rel, cosine));
+				Answer ans = new Answer(qid, sentid, rel);
+				ans.setScore(cosine);
+				allScoredAnswer.get(allScoredAnswer.size() - 1).add(ans);
+				sentid++;
 			}
 		}
 
 		// TODO :: compute the rank of retrieved sentences
-		for (List<Pair<Integer, Double>> scorePairs : allScorePairs) {
-			Collections.sort(scorePairs);
+		for (List<Answer> scoredAnswer : allScoredAnswer) {
+			Collections.sort(scoredAnswer, Collections.reverseOrder());
+		}
+
+		for (List<Answer> scoreAnswers : allScoredAnswer) {
+			for (int j = 0; j < scoreAnswers.size(); j++) {
+				Answer scoredAnswer = scoreAnswers.get(j);
+				System.out.println(String.format(
+						"Score : %f,\t rank=%d\t,rel=%d,qid=%d,sent%d",
+						scoredAnswer.getScore(), j + 1,
+						scoredAnswer.getRelevance(), scoredAnswer.getQid(),
+						scoredAnswer.getSentid()));
+			}
 		}
 
 		// TODO :: compute the metric:: mean reciprocal rank
-		double metric_mrr = compute_mrr(allScorePairs);
+		double metric_mrr = compute_mrr(allScoredAnswer);
 		System.out.println(" (MRR) Mean Reciprocal Rank ::" + metric_mrr);
 	}
 
@@ -163,23 +178,21 @@ public class RetrievalEvaluator extends CasConsumer_ImplBase {
 	 * 
 	 * @return mrr
 	 */
-	private double compute_mrr(List<List<Pair<Integer, Double>>> allScorePairs) {
+	private double compute_mrr(List<List<Answer>> allScoredAnswers) {
 		double metric_mrr = 0.0;
 
 		// TODO :: compute Mean Reciprocal Rank (MRR) of the text collection
-		for (List<Pair<Integer, Double>> scorePairs : allScorePairs) {
-			for (int i = 0; i < scorePairs.size(); i++) {
-				Pair<Integer, Double> scorePair = scorePairs.get(i);
-				if (scorePair.first == 1) {
-
+		for (List<Answer> scoredAnswers : allScoredAnswers) {
+			for (int i = 0; i < scoredAnswers.size(); i++) {
+				Answer scoreAnswer = scoredAnswers.get(i);
+				if (scoreAnswer.getRelevance() == 1) {
 					metric_mrr += 1.0 / (i + 1);
 					break;
 				}
 			}
 		}
 
-		metric_mrr /= allScorePairs.size();
-
+		metric_mrr /= allScoredAnswers.size();
 		return metric_mrr;
 	}
 
