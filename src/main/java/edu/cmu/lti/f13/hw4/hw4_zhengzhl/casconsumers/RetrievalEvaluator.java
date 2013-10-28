@@ -27,6 +27,7 @@ import edu.cmu.lti.f13.hw4.hw4_zhengzhl.utils.Answer;
 import edu.cmu.lti.f13.hw4.hw4_zhengzhl.utils.CosineQueryScorer;
 import edu.cmu.lti.f13.hw4.hw4_zhengzhl.utils.JaccardScorer;
 import edu.cmu.lti.f13.hw4.hw4_zhengzhl.utils.QueryScorer;
+import edu.cmu.lti.f13.hw4.hw4_zhengzhl.utils.RelativeFreqScorer;
 
 public class RetrievalEvaluator extends CasConsumer_ImplBase {
 
@@ -117,14 +118,15 @@ public class RetrievalEvaluator extends CasConsumer_ImplBase {
 
 		scorers.add(new CosineQueryScorer());
 		scorers.add(new JaccardScorer());
+		scorers.add(new RelativeFreqScorer());
 
 		for (QueryScorer scorer : scorers) {
 			System.out.println(String.format("====Result of %s ====",
 					scorer.name()));
 
-			// evaluate(scoreAnswers(scorer));
+			evaluate(scoreAnswers(scorer));
 
-			sortBasedEvaluate(scoreAnswers(scorer));
+			// sortBasedEvaluate(scoreAnswers(scorer));
 		}
 
 	}
