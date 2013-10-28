@@ -15,11 +15,13 @@ public class Answer implements Comparable<Answer> {
 	private int relevance;
 	private int qid;
 	private int sentid;
+	private String sentText;
 
-	public Answer(int qid, int sentid, int relevance) {
+	public Answer(int qid, int sentid, int relevance, String sentText) {
 		this.qid = qid;
 		this.sentid = sentid;
 		this.relevance = relevance;
+		this.setSentText(sentText);
 	}
 
 	public double getScore() {
@@ -82,6 +84,14 @@ public class Answer implements Comparable<Answer> {
 		if (this == obj)
 			return true;
 		return (qid == ((Answer) obj).qid) && (sentid == ((Answer) obj).sentid);
+	}
+
+	public String getSentText() {
+		return sentText;
+	}
+
+	public void setSentText(String sentText) {
+		this.sentText = sentText;
 	}
 
 }

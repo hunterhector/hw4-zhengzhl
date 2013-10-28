@@ -8,6 +8,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 import org.apache.uima.cas.CAS;
 import org.apache.uima.cas.CASException;
@@ -23,6 +24,9 @@ import org.apache.uima.util.ProcessTrace;
 import edu.cmu.lti.f13.hw4.hw4_zhengzhl.typesystems.Document;
 import edu.cmu.lti.f13.hw4.hw4_zhengzhl.typesystems.Token;
 import edu.cmu.lti.f13.hw4.hw4_zhengzhl.utils.Answer;
+import edu.cmu.lti.f13.hw4.hw4_zhengzhl.utils.CosineQueryScorer;
+import edu.cmu.lti.f13.hw4.hw4_zhengzhl.utils.JaccardScorer;
+import edu.cmu.lti.f13.hw4.hw4_zhengzhl.utils.QueryScorer;
 
 public class RetrievalEvaluator extends CasConsumer_ImplBase {
 
@@ -36,6 +40,8 @@ public class RetrievalEvaluator extends CasConsumer_ImplBase {
 
 	private List<Map<String, Integer>> documents;
 
+	private List<String> rawStrings;
+
 	public void initialize() throws ResourceInitializationException {
 
 		qIdList = new ArrayList<Integer>();
@@ -45,6 +51,8 @@ public class RetrievalEvaluator extends CasConsumer_ImplBase {
 		globalWords = new HashSet<String>();
 
 		documents = new ArrayList<Map<String, Integer>>();
+
+		rawStrings = new ArrayList<String>();
 	}
 
 	/**
@@ -80,10 +88,18 @@ public class RetrievalEvaluator extends CasConsumer_ImplBase {
 			Map<String, Integer> tokenWithFreq = new HashMap<String, Integer>();
 			for (Token token : FSCollectionFactory.create(fsTokenList,
 					Token.class)) {
-				globalWords.add(token.getText());
-				tokenWithFreq.put(token.getText(), token.getFrequency());
+
+				String tokenText = token.getText();
+
+				if (!Pattern.matches("\\p{Punct}", tokenText)) {
+					globalWords.add(tokenText);
+					tokenWithFreq.put(tokenText, token.getFrequency());
+				}
+
 			}
 			documents.add(tokenWithFreq);
+
+			rawStrings.add(doc.getText());
 		}
 
 	}
@@ -98,7 +114,22 @@ public class RetrievalEvaluator extends CasConsumer_ImplBase {
 
 		super.collectionProcessComplete(arg0);
 
-		List<List<Answer>> allScoredAnswer = new ArrayList<List<Answer>>();
+		List<QueryScorer> scorers = new ArrayList<QueryScorer>();
+
+		scorers.add(new CosineQueryScorer());
+		scorers.add(new JaccardScorer());
+
+		for (QueryScorer scorer : scorers) {
+			System.out.println(String.format("====Result of %s ====",
+					scorer.name()));
+
+			evaluate(scoreAnswers(scorer));
+		}
+
+	}
+
+	private List<List<Answer>> scoreAnswers(QueryScorer scorer) {
+		List<List<Answer>> scoredAnswers = new ArrayList<List<Answer>>();
 
 		Map<String, Integer> currentQuery = null;
 		// TODO :: compute the cosine similarity measure
@@ -107,19 +138,25 @@ public class RetrievalEvaluator extends CasConsumer_ImplBase {
 			int qid = qIdList.get(i);
 			int rel = relList.get(i);
 			Map<String, Integer> document = documents.get(i);
+			String text = rawStrings.get(i);
 			if (rel == 99) {
 				currentQuery = document;
-				allScoredAnswer.add(new ArrayList<Answer>());
+				scoredAnswers.add(new ArrayList<Answer>());
 				sentid = 1;
 			} else {
-				double cosine = computeCosineSimilarity(currentQuery, document);
-				Answer ans = new Answer(qid, sentid, rel);
-				ans.setScore(cosine);
-				allScoredAnswer.get(allScoredAnswer.size() - 1).add(ans);
+				double score = scorer.computeScore(globalWords, currentQuery,
+						document);
+				Answer ans = new Answer(qid, sentid, rel, text);
+				ans.setScore(score);
+				scoredAnswers.get(scoredAnswers.size() - 1).add(ans);
 				sentid++;
 			}
 		}
 
+		return scoredAnswers;
+	}
+
+	private void evaluate(List<List<Answer>> allScoredAnswer) {
 		// TODO :: compute the rank of retrieved sentences
 		for (List<Answer> scoredAnswer : allScoredAnswer) {
 			Collections.sort(scoredAnswer, Collections.reverseOrder());
@@ -128,50 +165,21 @@ public class RetrievalEvaluator extends CasConsumer_ImplBase {
 		for (List<Answer> scoreAnswers : allScoredAnswer) {
 			for (int j = 0; j < scoreAnswers.size(); j++) {
 				Answer scoredAnswer = scoreAnswers.get(j);
-				System.out.println(String.format(
-						"Score : %f,\t rank=%d\t,rel=%d,qid=%d,sent%d",
-						scoredAnswer.getScore(), j + 1,
-						scoredAnswer.getRelevance(), scoredAnswer.getQid(),
-						scoredAnswer.getSentid()));
+				// if (scoredAnswer.getRelevance() == 1) {
+				if (true) {
+
+					System.out.println(String.format(
+							"Score : %f,\t rank=%d\t,rel=%d,qid=%d,%s",
+							scoredAnswer.getScore(), j + 1,
+							scoredAnswer.getRelevance(), scoredAnswer.getQid(),
+							scoredAnswer.getSentText()));
+				}
 			}
 		}
 
 		// TODO :: compute the metric:: mean reciprocal rank
 		double metric_mrr = compute_mrr(allScoredAnswer);
 		System.out.println(" (MRR) Mean Reciprocal Rank ::" + metric_mrr);
-	}
-
-	/**
-	 * 
-	 * @return cosine_similarity
-	 */
-	private double computeCosineSimilarity(Map<String, Integer> queryVector,
-			Map<String, Integer> docVector) {
-		double cosine_similarity = 0.0;
-
-		// TODO :: compute cosine similarity between two sentences
-		double length1 = 0.0;
-		double length2 = 0.0;
-		for (String word : globalWords) {
-			double freq1 = 0.0;
-			if (queryVector.containsKey(word)) {
-				freq1 = queryVector.get(word);
-			}
-			double freq2 = 0.0;
-			if (docVector.containsKey(word)) {
-				freq2 = docVector.get(word);
-			}
-
-			cosine_similarity += freq1 * freq2;
-
-			length1 += freq1 * freq1;
-			length2 += freq2 * freq2;
-		}
-
-		cosine_similarity = cosine_similarity == 0 ? 0.0 : cosine_similarity
-				/ (Math.sqrt(length1) * Math.sqrt(length2));
-
-		return cosine_similarity;
 	}
 
 	/**
