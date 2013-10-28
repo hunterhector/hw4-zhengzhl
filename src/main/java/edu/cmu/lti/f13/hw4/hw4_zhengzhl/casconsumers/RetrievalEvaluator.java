@@ -95,7 +95,6 @@ public class RetrievalEvaluator extends CasConsumer_ImplBase {
 					globalWords.add(tokenText);
 					tokenWithFreq.put(tokenText, token.getFrequency());
 				}
-
 			}
 			documents.add(tokenWithFreq);
 
@@ -123,7 +122,9 @@ public class RetrievalEvaluator extends CasConsumer_ImplBase {
 			System.out.println(String.format("====Result of %s ====",
 					scorer.name()));
 
-			evaluate(scoreAnswers(scorer));
+			// evaluate(scoreAnswers(scorer));
+
+			sortBasedEvaluate(scoreAnswers(scorer));
 		}
 
 	}
@@ -156,8 +157,7 @@ public class RetrievalEvaluator extends CasConsumer_ImplBase {
 		return scoredAnswers;
 	}
 
-	private void evaluate(List<List<Answer>> allScoredAnswer) {
-		// TODO :: compute the rank of retrieved sentences
+	private void sortBasedEvaluate(List<List<Answer>> allScoredAnswer) {
 		for (List<Answer> scoredAnswer : allScoredAnswer) {
 			Collections.sort(scoredAnswer, Collections.reverseOrder());
 		}
@@ -176,9 +176,45 @@ public class RetrievalEvaluator extends CasConsumer_ImplBase {
 				}
 			}
 		}
-
 		// TODO :: compute the metric:: mean reciprocal rank
 		double metric_mrr = compute_mrr(allScoredAnswer);
+		System.out.println(" (MRR) Mean Reciprocal Rank ::" + metric_mrr);
+	}
+
+	private void evaluate(List<List<Answer>> allScoredAnswer) {
+		// TODO :: compute the rank of retrieved sentences
+		double metric_mrr = 0.0;
+
+		for (List<Answer> scoreAnswers : allScoredAnswer) {
+			double correctAnswerScore = 0.0;
+			int correctAnswerIndex = 0;
+
+			for (int i = 0; i < scoreAnswers.size(); i++) {
+				Answer answer = scoreAnswers.get(i);
+				if (answer.getRelevance() == 1) {
+					correctAnswerScore = answer.getScore();
+					correctAnswerIndex = i;
+				}
+			}
+
+			int rank = 1;
+			for (Answer answer : scoreAnswers) {
+				if (answer.getScore() > correctAnswerScore) {
+					rank += 1;
+				}
+			}
+
+			metric_mrr += 1.0 / rank;
+
+			Answer correctAnswer = scoreAnswers.get(correctAnswerIndex);
+			System.out.println(String.format(
+					"Score : %f,\t rank=%d\t,rel=%d,qid=%d,%s",
+					correctAnswer.getScore(), rank,
+					correctAnswer.getRelevance(), correctAnswer.getQid(),
+					correctAnswer.getSentText()));
+		}
+
+		metric_mrr /= allScoredAnswer.size();
 		System.out.println(" (MRR) Mean Reciprocal Rank ::" + metric_mrr);
 	}
 
