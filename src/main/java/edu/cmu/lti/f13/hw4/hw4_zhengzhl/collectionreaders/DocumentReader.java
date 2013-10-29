@@ -8,6 +8,13 @@ import org.apache.uima.jcas.JCas;
 
 import edu.cmu.lti.f13.hw4.hw4_zhengzhl.typesystems.Document;
 
+/**
+ * This reader essentially parse one document and treat each line as one new
+ * document
+ * 
+ * @author Zhengzhong Liu, Hector
+ * 
+ */
 public class DocumentReader extends JCasAnnotator_ImplBase {
 
 	@Override

@@ -29,6 +29,13 @@ import edu.cmu.lti.f13.hw4.hw4_zhengzhl.utils.JaccardScorer;
 import edu.cmu.lti.f13.hw4.hw4_zhengzhl.utils.QueryScorer;
 import edu.cmu.lti.f13.hw4.hw4_zhengzhl.utils.RelativeFreqScorer;
 
+/**
+ * This evaluator aggregate the query and use different methods to calculate the
+ * score, then evaluate all the queries using MRR
+ * 
+ * @author Zhengzhong Liu, Hector
+ * 
+ */
 public class RetrievalEvaluator extends CasConsumer_ImplBase {
 
 	/** query id number **/
@@ -56,10 +63,6 @@ public class RetrievalEvaluator extends CasConsumer_ImplBase {
 		rawStrings = new ArrayList<String>();
 	}
 
-	/**
-	 * TODO :: 1. construct the global word dictionary 2. keep the word
-	 * frequency for each sentence
-	 */
 	@Override
 	public void processCas(CAS aCas) throws ResourceProcessException {
 
@@ -104,10 +107,6 @@ public class RetrievalEvaluator extends CasConsumer_ImplBase {
 
 	}
 
-	/**
-	 * TODO 1. Compute Cosine Similarity and rank the retrieved sentences 2.
-	 * Compute the MRR metric
-	 */
 	@Override
 	public void collectionProcessComplete(ProcessTrace arg0)
 			throws ResourceProcessException, IOException {
@@ -131,6 +130,14 @@ public class RetrievalEvaluator extends CasConsumer_ImplBase {
 
 	}
 
+	/**
+	 * Use the scorer to score the answers
+	 * 
+	 * @param scorer
+	 *            This is an implementation of a scorer
+	 * @return A list of answers for all the questions, scored by the provided
+	 *         scorer
+	 */
 	private List<List<Answer>> scoreAnswers(QueryScorer scorer) {
 		List<List<Answer>> scoredAnswers = new ArrayList<List<Answer>>();
 
@@ -159,6 +166,11 @@ public class RetrievalEvaluator extends CasConsumer_ImplBase {
 		return scoredAnswers;
 	}
 
+	/**
+	 * Evaluate the answers by sorting
+	 * 
+	 * @param allScoredAnswer
+	 */
 	private void sortBasedEvaluate(List<List<Answer>> allScoredAnswer) {
 		for (List<Answer> scoredAnswer : allScoredAnswer) {
 			Collections.sort(scoredAnswer, Collections.reverseOrder());
@@ -183,6 +195,11 @@ public class RetrievalEvaluator extends CasConsumer_ImplBase {
 		System.out.println(" (MRR) Mean Reciprocal Rank ::" + metric_mrr);
 	}
 
+	/**
+	 * Evaluate the answers by finding where the correct answer rank
+	 * 
+	 * @param allScoredAnswer
+	 */
 	private void evaluate(List<List<Answer>> allScoredAnswer) {
 		// TODO :: compute the rank of retrieved sentences
 		double metric_mrr = 0.0;
@@ -221,8 +238,9 @@ public class RetrievalEvaluator extends CasConsumer_ImplBase {
 	}
 
 	/**
+	 * Compute the MRR from the scored answers for all questions
 	 * 
-	 * @return mrr
+	 * @return mrr The computed MRR (Mean Reporical Rank)
 	 */
 	private double compute_mrr(List<List<Answer>> allScoredAnswers) {
 		double metric_mrr = 0.0;

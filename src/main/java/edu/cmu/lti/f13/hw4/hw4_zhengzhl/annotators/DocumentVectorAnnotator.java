@@ -22,6 +22,12 @@ import edu.stanford.nlp.ling.CoreLabel;
 import edu.stanford.nlp.pipeline.Annotation;
 import edu.stanford.nlp.pipeline.StanfordCoreNLP;
 
+/**
+ * Annotate document as vectors
+ * 
+ * @author Zhengzhong Liu, Hector
+ * 
+ */
 public class DocumentVectorAnnotator extends JCasAnnotator_ImplBase {
 	private StanfordCoreNLP pipeline;
 
@@ -52,11 +58,11 @@ public class DocumentVectorAnnotator extends JCasAnnotator_ImplBase {
 	}
 
 	/**
+	 * For each doc object, create a tokenlist and assign to it
 	 * 
 	 * @param jcas
 	 * @param doc
 	 */
-
 	private void createTermFreqVector(JCas aJCas, Document doc) {
 
 		String docText = doc.getText();
