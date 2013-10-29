@@ -7,6 +7,8 @@ import java.util.Map;
 import java.util.Set;
 
 /**
+ * Implement the interface to compute Jaccard coefficient
+ * 
  * @author Zhengzhong Liu, Hector
  * 
  */

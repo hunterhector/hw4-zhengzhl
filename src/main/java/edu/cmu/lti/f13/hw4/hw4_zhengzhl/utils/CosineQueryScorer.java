@@ -7,6 +7,8 @@ import java.util.Map;
 import java.util.Set;
 
 /**
+ * Extends the interface to implement a cosine similarity scorer
+ * 
  * @author Zhengzhong Liu, Hector
  * 
  */

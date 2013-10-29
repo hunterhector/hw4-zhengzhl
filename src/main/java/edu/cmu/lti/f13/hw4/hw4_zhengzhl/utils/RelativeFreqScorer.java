@@ -8,6 +8,8 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 /**
+ * A scorer using the relative frequency method
+ * 
  * @author Zhengzhong Liu, Hector
  * 
  */

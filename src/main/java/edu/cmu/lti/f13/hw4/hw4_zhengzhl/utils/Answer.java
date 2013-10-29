@@ -6,6 +6,9 @@ package edu.cmu.lti.f13.hw4.hw4_zhengzhl.utils;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 /**
+ * An answer object that implement a comparator based on the score. Will be used
+ * to compute and rank
+ * 
  * @author hector
  * 
  */

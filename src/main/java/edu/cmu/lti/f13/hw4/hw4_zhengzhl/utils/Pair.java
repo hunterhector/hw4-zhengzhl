@@ -1,5 +1,13 @@
 package edu.cmu.lti.f13.hw4.hw4_zhengzhl.utils;
 
+/**
+ * A utility class to store a pair of value
+ * 
+ * @author Zhengzhong Liu, Hector
+ * 
+ * @param <A>
+ * @param <B>
+ */
 public class Pair<A extends Comparable<? super A>, B extends Comparable<? super B>>
 		implements Comparable<Pair<A, B>> {
 
